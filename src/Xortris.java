@@ -4,8 +4,15 @@ import java.util.*;
 public class Xortris {
 
     public static void main(String[] args) throws FileNotFoundException {
-        Xortris x33 = new Xortris(3, 3);
-        System.out.println(x33.solvableGridCount());
+        for (int w = 1; w <= 8; w++) {
+            for (int h = 1; h * w <= 22 && h <= w; h++) {
+                Xortris x = new Xortris(w, h);
+                long exp = 1L << (w * h - 1);
+                if (exp != x.gridCount)
+                    System.out.format("%d x %d = %2d (%8X): %8X\n", w, h,
+                            w * h, exp, x.gridCount);
+            }
+        }
         if (true) return;
 
         Scanner s = new Scanner(System.in);
@@ -29,13 +36,13 @@ public class Xortris {
     }
 
     /** Size of grid */
-    private final int    w, h;
+    public final int     w, h;
 
     /** Solvability of individual grids, one bit per grid is ascending order */
     private final long[] grids;
 
     /** Number of solvable grids */
-    private final long   gridCount;
+    public final long    gridCount;
 
     /**
      * Create a new instance of the Xortris game and find all solvable starting
@@ -84,7 +91,7 @@ public class Xortris {
 
         // visit every reachable node in the move tree, 
         // we cycle through every bit in the visit array until it is empty 
-        long gCount = 0, dgCount = 0;
+        long gCount = 1, dgCount = 0;
         do {
             dgCount = 0;
             for (int idx = 0; idx < sz; idx++) {
@@ -136,6 +143,10 @@ public class Xortris {
                     visit[idx] &= ~bit;
                     dgCount += moveCount;
 
+                    if ((Long.bitCount(grid) & 1) == 1) {
+                        System.out.println("WARNING: ODD GRID FOUND");
+                        System.out.println(gridToString(grid));
+                    }
                 }
             }
             gCount += dgCount;
@@ -144,8 +155,28 @@ public class Xortris {
         gridCount = gCount;
     }
 
-    public long solvableGridCount() {
-        return gridCount;
+    /** Return the next solvable grid from the puzzle */
+    public long nextGrid(long prevGrid) {
+        final long r0Mask = (1 << w) - 1;
+        final long r1sh = 8 - w;
+        long p = 0;
+        for (long sh = 0, m = r0Mask; sh < r1sh * h; sh += r1sh, m <<= w) {
+            p |= (prevGrid >>> sh) & m;
+        }
+
+        final long max = 1L << (w * h);
+        while (++p < max) {
+            long bit = 1L << (p & 0x3F);
+            int idx = (int) (p >>> 6);
+            if ((grids[idx] & bit) == 0) continue;
+
+            long grid = 0;
+            for (long sh = 0, m = r0Mask; sh < r1sh * h; sh += r1sh, m <<= w) {
+                grid |= (p & m) << sh;
+            }
+            return grid;
+        }
+        return 0;
     }
 
     //@formatter:off
