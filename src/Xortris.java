@@ -4,14 +4,21 @@ import java.util.*;
 public class Xortris {
 
     public static void main(String[] args) throws FileNotFoundException {
-        for (int w = 1; w <= 8; w++) {
-            for (int h = 1; h * w <= 22 && h <= w; h++) {
-                Xortris x = new Xortris(w, h);
-                long exp = 1L << (w * h - 1);
-                if (exp != x.gridCount)
-                    System.out.format("%d x %d = %2d (%8X): %8X\n", w, h,
-                            w * h, exp, x.gridCount);
-            }
+        /*
+         * After taking an embarrassingly long time messing around,
+         * it seems my initial thoughts were right - all grids with
+         * an even number of black squares *are* solvable, but only
+         * if the grid height and width are > 1 *and* the total area
+         * is > 4.  
+         * Special cases are needed for Nx1, 1xM, and 2x2 grids.
+         */
+        Xortris x = new Xortris(8, 1);
+        System.out.println(x.gridCount);
+        for (long g = 0; g < 1L << (x.w * x.h - 1); g++) {
+            if (Long.bitCount(g) % 2 == 1) continue;
+            System.out.print(gridToString(g));
+            System.out.println(x.hasGrid(g) ? " !!" : "");
+
         }
         if (true) return;
 
@@ -160,7 +167,7 @@ public class Xortris {
         final long r0Mask = (1 << w) - 1;
         final long r1sh = 8 - w;
         long p = 0;
-        for (long sh = 0, m = r0Mask; sh < r1sh * h; sh += r1sh, m <<= w) {
+        for (long i = 0, sh = 0, m = r0Mask; i < 8; i++, sh += r1sh, m <<= w) {
             p |= (prevGrid >>> sh) & m;
         }
 
@@ -171,12 +178,25 @@ public class Xortris {
             if ((grids[idx] & bit) == 0) continue;
 
             long grid = 0;
-            for (long sh = 0, m = r0Mask; sh < r1sh * h; sh += r1sh, m <<= w) {
+            for (long i = 0, sh = 0, m = r0Mask; i < 8; i++, sh += r1sh, m <<= w) {
                 grid |= (p & m) << sh;
             }
             return grid;
         }
         return 0;
+    }
+
+    /** Return true if the specified grid is solvable */
+    public boolean hasGrid(long grid) {
+        final long r0Mask = (1 << w) - 1;
+        final long r1sh = 8 - w;
+        long p = 0;
+        for (long i = 0, sh = 0, m = r0Mask; i < 8; i++, sh += r1sh, m <<= w) {
+            p |= (grid >>> sh) & m;
+        }
+        long bit = 1L << (p & 0x3F);
+        int idx = (int) (p >>> 6);
+        return (grids[idx] & bit) != 0;
     }
 
     //@formatter:off
