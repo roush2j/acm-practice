@@ -3,71 +3,6 @@ import java.util.*;
 
 public class ClassificationCmp {
 
-    public static void randomTree(PrintStream out, Random rand, int[] vals,
-            int start, int len) {
-        if (len == 1) {
-            out.print(vals[start] + 1);
-            return;
-        }
-        int children = 1 + Integer.numberOfLeadingZeros(rand.nextInt()) / 2;
-        if (children == 1) {
-            randomTree(out, rand, vals, start, len);
-            return;
-        } else if (children > len) children = len;
-        float childpop = len / (float) children;
-        int off = 0;
-        out.append('(');
-        for (int c = 1; c < children && off < len; c++) {
-            int l = Math.round(childpop * (rand.nextFloat() + rand.nextFloat())
-                    / 2.0F);
-            if (l == 0) l = 1;
-            randomTree(out, rand, vals, start + off, l);
-            out.append(',');
-            off += l;
-        }
-        if (off < len) {
-            randomTree(out, rand, vals, start + off, len - off);
-        }
-        out.append(')');
-    }
-
-    public static void randomInputLine(PrintStream out, Random rand, int N) {
-        int[] vals = new int[N];
-        for (int i = 0; i < vals.length; i++)
-            vals[i] = i;
-        for (int i = vals.length - 1; i >= 0; i--) {
-            int j = rand.nextInt(i + 1);
-            int tmp = vals[i];
-            vals[i] = vals[j];
-            vals[j] = tmp;
-        }
-        randomTree(out, rand, vals, 0, N);
-        out.println();
-    }
-
-    public static void orderedInputLine(PrintStream out, int N, boolean order) {
-        if (order) {
-            for (int i = 1; i < N; i++)
-                out.append('(');
-            out.append('1');
-            for (int i = 1; i < N; i++) {
-                out.append(',');
-                out.print(i + 1);
-                out.append(')');
-            }
-        } else {
-            for (int i = N; i > 1; i--) {
-                out.append('(');
-                out.print(i);
-                out.append(',');
-            }
-            out.append('1');
-            for (int i = 1; i < N; i++)
-                out.append(')');
-        }
-        out.println();
-    }
-
     /**
      * Parsed tree structure. The first N nodes are the leaves in order of
      * value, the N+1 node is the root, and the remaining nodes follow.
@@ -166,10 +101,6 @@ public class ClassificationCmp {
 
     public static void main(String[] args) throws IOException {
 
-        if (true) {
-            System.setIn(new FileInputStream("Classification-in-10000b"));
-        }
-
         // parse number of leaves
         StringBuilder sb = new StringBuilder();
         for (int ch = System.in.read(); ch >= 0; ch = System.in.read()) {
@@ -177,31 +108,10 @@ public class ClassificationCmp {
             else break;
         }
         final int N = Integer.parseInt(sb.toString());
-
-        // randomized inputs
-        if (false) {
-            PrintStream out = new PrintStream("Classification-out");
-            out.println(N);
-            randomInputLine(out, new Random(), N);
-            randomInputLine(out, new Random(), N);
-            return;
-        } else if (false) {
-            PrintStream out = new PrintStream("Classification-out");
-            out.println(N);
-            orderedInputLine(out, N, true);
-            orderedInputLine(out, N, false);
-            out.println(2 * N - 1);
-            return;
-        }
-
+        
         // parse trees
         Tree a = new Tree(N, System.in);
         Tree b = new Tree(N, System.in);
-//        System.out.println(N);
-//        a.print(System.out);
-//        System.out.println();
-//        b.print(System.out);
-//        System.out.println();
 
         //
         int[] anodes = Arrays.copyOf(a.dforder, N);
@@ -251,12 +161,6 @@ public class ClassificationCmp {
             // check if common ancestor is exact match for target A-node
             if (bcnt == acnt) {
                 matchingNodes++;
-//                System.out.print("{");
-//                for (int l = baseleaf; l < endleaf; l++) {
-//                    System.out.print(a.dforder[l] + 1);
-//                    System.out.append(',');
-//                }
-//                System.out.println("}");
             }
             if (acnt == N) break;
 
@@ -269,16 +173,5 @@ public class ClassificationCmp {
         }
 
         System.out.println(matchingNodes);
-        if (true) {
-            sb = new StringBuilder();
-            for (int ch = System.in.read(); ch >= 0; ch = System.in.read()) {
-                if (ch >= '0' && ch <= '9') sb.append((char) ch);
-            }
-            if (sb.length() > 0) {
-                final int expected = Integer.parseInt(sb.toString());
-                System.out.println(" == " + expected + " : "
-                        + (expected == matchingNodes));
-            }
-        }
     }
 }
