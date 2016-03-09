@@ -6,7 +6,7 @@ public class ClassificationCmp {
     public static void randomTree(PrintStream out, Random rand, int[] vals,
             int start, int len) {
         if (len == 1) {
-            out.print(vals[start]);
+            out.print(vals[start] + 1);
             return;
         }
         int children = 1 + Integer.numberOfLeadingZeros(rand.nextInt()) / 2;
@@ -42,6 +42,27 @@ public class ClassificationCmp {
             vals[j] = tmp;
         }
         randomTree(out, rand, vals, 0, N);
+        out.println();
+    }
+    
+    public static void orderedInputLine(PrintStream out, int N, boolean order) {
+        if (order) {
+            for (int i = 1; i < N; i++)out.append('(');
+            out.append('1');
+            for (int i = 1; i < N; i++){
+                out.append(',');
+                out.print(i + 1);
+                out.append(')');
+            }
+        } else {
+            for (int i = N; i > 1; i--){
+                out.append('(');
+                out.print(i);
+                out.append(',');
+            }
+            out.append('1');
+            for (int i = 1; i < N; i++)out.append(')');
+        }
         out.println();
     }
 
@@ -123,6 +144,10 @@ public class ClassificationCmp {
 
     public static void main(String[] args) throws IOException {
 
+        if (false) {
+            System.setIn(new FileInputStream("Classification-in-50b"));
+        }
+
         // parse number of leaves
         StringBuilder sb = new StringBuilder();
         for (int ch = System.in.read(); ch >= 0; ch = System.in.read()) {
@@ -132,17 +157,29 @@ public class ClassificationCmp {
         final int N = Integer.parseInt(sb.toString());
 
         // randomized inputs
-        if (true) {
-            PrintStream out = new PrintStream("Classification-in-" + N);
+        if (false) {
+            PrintStream out = new PrintStream("Classification-out");
             out.println(N);
             randomInputLine(out, new Random(), N);
             randomInputLine(out, new Random(), N);
+            return;
+        } else if (true) {
+            PrintStream out = new PrintStream("Classification-out");
+            out.println(N);
+            orderedInputLine(out, N, true);
+            orderedInputLine(out, N, false);
+            out.println(2 * N - 1);
             return;
         }
 
         // parse trees
         int[] a = parse(N, System.in);
         int[] b = parse(N, System.in);
+        //System.out.println(N);
+        //printTree(N, a);
+        //System.out.println();
+        //printTree(N, b);
+        //System.out.println();
 
         //
         int[] nodemap = new int[2 * N];
@@ -198,5 +235,16 @@ public class ClassificationCmp {
         }
 
         System.out.println(matchingNodes);
+        if (true) {
+            sb = new StringBuilder();
+            for (int ch = System.in.read(); ch >= 0; ch = System.in.read()) {
+                if (ch >= '0' && ch <= '9') sb.append((char) ch);
+            }
+            if (sb.length() > 0) {
+                final int expected = Integer.parseInt(sb.toString());
+                System.out.println(" == " + expected + " : "
+                        + (expected == matchingNodes));
+            }
+        }
     }
 }
