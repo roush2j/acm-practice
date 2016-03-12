@@ -78,7 +78,7 @@ public class SkiHill {
     public static void main(String[] args) {
         if (false) {
             try {
-                PrintStream out = new PrintStream("SkiTests");
+                PrintStream out = new PrintStream("SkiTest4");
                 final long maxh = 1000000, dd = 4;
                 long N = 100000, Q = 10000;
                 long dx = N / (dd + 1);
@@ -94,7 +94,7 @@ public class SkiHill {
                 }
                 out.println(maxh + " " + 0);
                 for (int q = 0; q < Q; q++) {
-                    if (q % 16 > 0) {
+                    if (q % 2 > 0) {
                         out.print("1 ");
                         out.print(q * N / Q / 2);
                         out.print(' ');
@@ -110,7 +110,7 @@ public class SkiHill {
                 e.printStackTrace();
             }
             return;
-        } else if (true) {
+        } else if (false) {
             try {
                 System.setIn(new FileInputStream("SkiTests"));
                 System.setOut(new PrintStream("SkiOutput"));
@@ -118,7 +118,6 @@ public class SkiHill {
                 e.printStackTrace();
             }
         }
-        long starttime = System.nanoTime();
 
         Scanner s = new Scanner(System.in);
         final int N = s.nextInt(), Q = s.nextInt();
@@ -132,10 +131,10 @@ public class SkiHill {
             case 1: {
                 int X = s.nextInt();
                 long K = s.nextLong();
-                long a = hill.oldQuery(X, K);
+                //long a = hill.oldQuery(X, K);
                 long b = hill.query(X, K);
                 System.out.println(b);
-                if (a != b) System.err.println(a + " != " + b);
+                //if (a != b) System.err.println(a + " != " + b);
                 break;
             }
             default:
@@ -143,7 +142,5 @@ public class SkiHill {
             }
         }
         s.close();
-
-        System.err.println((System.nanoTime() - starttime) / 1000000000.0);
     }
 }
