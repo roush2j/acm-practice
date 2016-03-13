@@ -1,6 +1,5 @@
 #include <iostream>
 #include <cstdlib>
-#include <algorithm>
 #include <cmath>
 
 int nextPow2(int n) {
@@ -29,9 +28,15 @@ private:
     */
     struct Node {
         long    cost;   // total cost of all descendants
-        long    lfun;   // total fun from leftmost desc. to start of max fun
-        long    mfun;   // maximum total fun of all left-descendants
-        long    rfun;   // total fun from end of max fun to rightmost desc.
+        long    lfun;   // maximum total fun from leftmost desc.
+        long    lpen;   // negative penalty between lfun and max fun
+        long    mfun;   // maximum total fun of all descendants
+        long    rpen;   // negative penalty between max fun and rfun
+        long    rfun;   // maximum total fun from rightmost desc.
+        
+        void zeroInit() {
+            cost = lfun = lpen = mfun = rpen = rfun = 0;
+        }
     };    
     int     nodecnt;
     Node*   data;
@@ -55,21 +60,38 @@ private:
     
     /* Update node after children have been modified */
     static void updateNode(Node* node, Node* lch, Node* rch) {
-        node->cost = lch->cost + rch->cost;
-        long cfun = lch->mfun + lch->rfun + rch->lfun + rch->mfun;
-        if (cfun >= lch->mfun && cfun >= rch->mfun) {
-            node->lfun = lch->lfun;
-            node->mfun = cfun;
-            node->rfun = rch->rfun;
-        } else if (lch->mfun >= rch->mfun) {
-            node->lfun = lch->lfun;
-            node->mfun = lch->mfun;
-            node->rfun = lch->rfun + rch->lfun + rch->mfun + rch->rfun;
-        } else {
-            node->lfun = lch->lfun + lch->mfun + lch->rfun + rch->lfun;
-            node->mfun = rch->mfun;
-            node->rfun = rch->rfun;
+        long cost = lch->cost + rch->cost;        
+        long f[10];
+        f[0] = lch->lfun;   f[5] = rch->lfun;
+        f[1] = lch->lpen;   f[6] = rch->lpen;
+        f[2] = lch->mfun;   f[7] = rch->mfun;
+        f[3] = lch->rpen;   f[8] = rch->rpen;
+        f[4] = lch->rfun;   f[9] = rch->rfun; 
+        node->zeroInit();
+        
+        node->cost = cost;
+        
+        long fun = 0;
+        int lidx = 0, ridx = -1;
+        for (int i = 0, start = 0; i < 10; i++) {
+            fun += f[i];
+            if (fun < 0) { fun = 0; start = i + 1; }
+            else if (fun > node->mfun) { node->mfun = fun; lidx = start; ridx = i; }
         }
+        
+        fun = 0;
+        for (int i = 0; i < lidx; i++) {
+            fun += f[i];
+            if (fun > node->lfun) { node->lfun = fun; }
+        }
+        node->lpen = fun - node->lfun;
+        
+        fun = 0;
+        for (int i = 9; i > ridx; i--) {
+            fun += f[i];
+            if (fun > node->rfun) { node->rfun = fun; }
+        }
+        node->rpen = fun - node->rfun;
     }
     
 public:
@@ -77,10 +99,7 @@ public:
     SkiHill(int n, std::istream& in) 
         : N(n), heights(new int[n+1]), nodecnt(nextPow2(n)*2), data(new Node[nodecnt])
     {
-        data->cost = 0;
-        data->lfun = 0;
-        data->mfun = 0;
-        data->rfun = 0;
+        data->zeroInit();
         in >> *heights;
             
         int* height = heights + 1;
@@ -91,25 +110,17 @@ public:
             *height = hr;
                         
             // initialize leaf node
+            leaf->zeroInit();
             leaf->cost = (long)hl + (long)hr;
             long dh = (long)hl - (long)hr;
-            if (dh >= 0) {
-                leaf->lfun = 0;
-                leaf->mfun = dh * dh;
-                leaf->rfun = 0;
-            } else {
-                leaf->lfun = 0;
-                leaf->mfun = 0;
-                leaf->rfun = - dh * dh;
-            }
-            //std::cout << print(*leaf) << '\n';
+            if (dh >= 0) leaf->mfun = dh * dh;
+            else leaf->rpen = - dh * dh;
             
             // init parent nodes when all descendants have been initialized
             Node* rch = leaf;
             for (int j = i; j % 2 == 1; j /= 2) {
                 Node* par = parent(rch);
                 updateNode(par, rch - 1, rch);
-                //std::cout << print(*par) << '\n';
                 rch = par;
             }
         }
@@ -117,10 +128,7 @@ public:
         // initialize remaining empty leaves
         for (int i = N; i < nodecnt/2; i++, leaf++) {
             // initialize leaf node
-            leaf->cost = 0;
-            leaf->lfun = 0;
-            leaf->mfun = 0;
-            leaf->rfun = 0;
+            leaf->zeroInit();
             
             // init parent nodes when all descendants have been initialized
             Node* rch = leaf;
@@ -128,7 +136,6 @@ public:
                 Node* par = parent(rch);
                 updateNode(par, rch - 1, rch);
                 rch = par;
-                //std::cout << print(*par) << '\n';
             }
         }
     }
@@ -147,35 +154,35 @@ public:
         leaf->cost = (long)hl + (long)hr;
         long dh = (long)hl - (long)hr;
         if (dh >= 0) {
-            leaf->lfun = 0;
             leaf->mfun = dh * dh;
-            leaf->rfun = 0;
+            leaf->rpen = 0;
         } else {
-            leaf->lfun = 0;
             leaf->mfun = 0;
-            leaf->rfun = - dh * dh;
+            leaf->rpen = - dh * dh;
         }
-        //std::cout << print(*leaf) << '\n';
         
         // update parent nodes
         for (Node* ch = leaf; ch != data + 1; ) {
             Node* par = parent(ch);
             Node* lch = leftchild(par);
             updateNode(par, lch, lch + 1);
-            //std::cout << print(*par) << '\n';
             ch = par;
         }
     }
     
     void update(int idx, int V) {
+        //std::cout << "Query i=" << idx << ", V=" << V << '\n';
         heights[idx] = V;
         if (idx > 0) update_(idx - 1);
         if (idx < N) update_(idx);
+        //std::cout << *this;
     }
 
     long query(int X, long K) {
         //std::cout << "Query X=" << X << ", K=" << K;
-        Node q {-K,0,0,0};
+        Node q;
+        q.zeroInit();
+        q.cost = -K;
         
         // add bonus for cabin at X
         for (Node* node = data + (nodecnt/2 + X); X != 0; X >>= 1) {
@@ -185,18 +192,20 @@ public:
             }
             node = parent(node);
         }
-        //std::cout << "(" << q.cost << ")\n";
+        //std::cout << ", AdjK = " << -q.cost << "\n";
         
         // binary search for max fun
         Node* node = data + 1;
         if (q.cost + node->cost <= 0) return node->mfun;
         while ((node - data) < nodecnt) {
+            //std::cout << "   node = " << print(*node) << ",   q = " << print(q) << "\n";
             if (q.cost + node->cost <= 0) {
                 updateNode(&q, &q, node);
                 node++;
             }
             node = leftchild(node);
-        }        
+        }    
+        //std::cout << "   q = " << print(q) << "\n";    
         return q.mfun;
     }
 };
@@ -211,14 +220,16 @@ std::ostream& operator << (std::ostream& out, const SkiHill::NodePrint& n) {
         out << " h=[" << n.hill.heights[i];
         out << ',' << n.hill.heights[i + 1] << ']';
     }
-    out << " cost=" << n.node.cost;
-    out << " fun=[" << n.node.lfun << ',' << n.node.mfun << ',' << n.node.rfun << ']';
+    const SkiHill::Node& nn = n.node;
+    out << " cost=" << nn.cost;
+    out << " fun=[" << nn.lfun << ',' << nn.lpen << ',' << nn.mfun;
+    out << ',' << nn.rpen << ',' << nn.rfun << ']';
     return out;
 }
 
 std::ostream& operator << (std::ostream& out, const SkiHill& hill) {
     for (int i = 0; i < hill.nodecnt; i++) 
-        std::cout << hill.print(hill.data[i]) << '\n';
+        out << hill.print(hill.data[i]) << '\n';
     return out;
 }
 
@@ -226,6 +237,7 @@ int main(int argc, char** args) {
     int N, Q;
     std::cin >> N >> Q;
     SkiHill hill(N, std::cin);
+        //std::cout << hill;
     for (int q = 0; q < Q; q++) {
         int query;
         std::cin >> query;

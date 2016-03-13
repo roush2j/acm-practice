@@ -75,48 +75,71 @@ public class SkiHill {
         return maxfun;
     }
 
+    public static void sawTest(PrintStream out, int N, int Q) {
+        final int maxh = 1000000, dd = 4;
+        int dx = N / (dd + 1);
+        N = dx * (dd + 1) + 1;
+        out.println(N + " " + Q);
+        for (long i = 0; i < dx; i++) {
+            out.print(maxh);
+            out.print(' ');
+            for (long j = 0; j < dd; j++) {
+                out.print(j * maxh / dd);
+                out.print(' ');
+            }
+        }
+        out.println(maxh + " " + 0);
+        for (long q = 0; q < Q; q++) {
+            if (q % 2 > 0) {
+                out.print("1 ");
+                out.print(q * N / Q / 2);
+                out.print(' ');
+                out.println(q * maxh * (dd + 1) * dx / Q);
+            } else {
+                out.print("0 ");
+                out.print(q * N / Q);
+                out.print(' ');
+                out.println(5);
+            }
+        }
+    }
+
+    public static void fuzzTest(PrintStream out, int N, int Q) {
+        Random rand = new Random();
+        final int hbound = 1000000 + 1;
+        final long kbound = hbound * (long)N / 8;
+        out.println(N + " " + Q);
+        for (long i = 0; i <= N; i++) {
+            out.print(rand.nextInt(hbound));
+            out.print(' ');
+        }
+        out.println();
+        for (long q = 0; q < Q; q++) {
+            if (q % 2 > 0) {
+                out.print("1 ");
+                out.print(rand.nextInt(N + 1));
+                out.print(' ');
+                out.println((rand.nextLong() >>> 1) % kbound);
+            } else {
+                out.print("0 ");
+                out.print(rand.nextInt(N + 1));
+                out.print(' ');
+                out.println(rand.nextInt(hbound));
+            }
+        }
+    }
+
     public static void main(String[] args) {
-        if (false) {
-            try {
-                PrintStream out = new PrintStream("SkiTest4");
-                final long maxh = 1000000, dd = 4;
-                long N = 100000, Q = 10000;
-                long dx = N / (dd + 1);
-                N = dx * (dd + 1) + 1;
-                out.println(N + " " + Q);
-                for (int i = 0; i < dx; i++) {
-                    out.print(maxh);
-                    out.print(' ');
-                    for (int j = 0; j < dd; j++) {
-                        out.print(j * maxh / dd);
-                        out.print(' ');
-                    }
-                }
-                out.println(maxh + " " + 0);
-                for (int q = 0; q < Q; q++) {
-                    if (q % 2 > 0) {
-                        out.print("1 ");
-                        out.print(q * N / Q / 2);
-                        out.print(' ');
-                        out.println(q * maxh * (dd + 1) * dx / Q);
-                    } else {
-                        out.print("0 ");
-                        out.print(q * N / Q);
-                        out.print(' ');
-                        out.println(5);
-                    }
-                }
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+        if (args.length > 1) {
+            String test = args[0];
+            int N = Integer.parseInt(args[1]);
+            int Q = Integer.parseInt(args[2]);
+            if (test.equalsIgnoreCase("sawtest")) {
+                sawTest(System.out, N, Q);
+            } else if (test.equalsIgnoreCase("fuzztest")) {
+                fuzzTest(System.out, N, Q);
+            } else throw new RuntimeException("Unknown test " + test);
             return;
-        } else if (false) {
-            try {
-                System.setIn(new FileInputStream("SkiTests"));
-                System.setOut(new PrintStream("SkiOutput"));
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
         }
 
         Scanner s = new Scanner(System.in);
