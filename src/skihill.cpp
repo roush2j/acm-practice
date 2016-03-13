@@ -53,11 +53,6 @@ private:
         return data + 2 * (node - data) + 1;
     }
     
-    struct NodePrint { const SkiHill& hill; const Node& node; };
-    NodePrint print(const Node& node) const { return NodePrint {*this,node}; }
-    friend std::ostream& operator << (std::ostream&, const NodePrint&);
-    friend std::ostream& operator << (std::ostream&, const SkiHill&);
-    
     /* Update node after children have been modified */
     static void updateNode(Node* node, Node* lch, Node* rch) {
         long cost = lch->cost + rch->cost;        
@@ -171,15 +166,12 @@ public:
     }
     
     void update(int idx, int V) {
-        //std::cout << "Query i=" << idx << ", V=" << V << '\n';
         heights[idx] = V;
         if (idx > 0) update_(idx - 1);
         if (idx < N) update_(idx);
-        //std::cout << *this;
     }
 
     long query(int X, long K) {
-        //std::cout << "Query X=" << X << ", K=" << K;
         Node q;
         q.zeroInit();
         q.cost = -K;
@@ -192,52 +184,25 @@ public:
             }
             node = parent(node);
         }
-        //std::cout << ", AdjK = " << -q.cost << "\n";
         
         // binary search for max fun
         Node* node = data + 1;
         if (q.cost + node->cost <= 0) return node->mfun;
         while ((node - data) < nodecnt) {
-            //std::cout << "   node = " << print(*node) << ",   q = " << print(q) << "\n";
             if (q.cost + node->cost <= 0) {
                 updateNode(&q, &q, node);
                 node++;
             }
             node = leftchild(node);
-        }    
-        //std::cout << "   q = " << print(q) << "\n";    
+        }
         return q.mfun;
     }
 };
-
-std::ostream& operator << (std::ostream& out, const SkiHill::NodePrint& n) {
-    out << '@' << (&n.node - n.hill.data);
-    int i = (&n.node - n.hill.data) - (n.hill.nodecnt/2);
-    if (i >= n.hill.N) {
-        out << " Empty#" << i;
-    } else if (i >= 0) {
-        out << " Leaf#" << i;
-        out << " h=[" << n.hill.heights[i];
-        out << ',' << n.hill.heights[i + 1] << ']';
-    }
-    const SkiHill::Node& nn = n.node;
-    out << " cost=" << nn.cost;
-    out << " fun=[" << nn.lfun << ',' << nn.lpen << ',' << nn.mfun;
-    out << ',' << nn.rpen << ',' << nn.rfun << ']';
-    return out;
-}
-
-std::ostream& operator << (std::ostream& out, const SkiHill& hill) {
-    for (int i = 0; i < hill.nodecnt; i++) 
-        out << hill.print(hill.data[i]) << '\n';
-    return out;
-}
 
 int main(int argc, char** args) {
     int N, Q;
     std::cin >> N >> Q;
     SkiHill hill(N, std::cin);
-        //std::cout << hill;
     for (int q = 0; q < Q; q++) {
         int query;
         std::cin >> query;
