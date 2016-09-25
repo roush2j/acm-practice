@@ -1,5 +1,10 @@
 import java.util.*;
 
+/**
+ * https://open.kattis.com/problems/robotopia
+ * 
+ * @author jroush
+ */
 public class Robotopia {
 
     public static void main(String[] args) {
