@@ -1,6 +1,6 @@
 import java.util.*;
 
-public class FreeDesserts {
+public class FreeDesserts_Search {
 
     public static void main(String[] args) {
         Scanner s = new Scanner(System.in);
@@ -13,8 +13,7 @@ public class FreeDesserts {
             digits.mapDigit(x, digit, DigitMap.PRICE);
         }
         List<String> solutions = new ArrayList<>(5000);
-        Map<Integer, Long> cache = new HashMap<>();
-        long cnt = solve(100_000_000_000_000_000L, P, 0, 0, digits, solutions, cache);
+        long cnt = solve(100_000_000_000_000_000L, P, 0, 0, digits, solutions);
         System.out.println(cnt);
         for (String sol : solutions) {
             System.out.println(sol);
@@ -61,8 +60,7 @@ public class FreeDesserts {
             long pPrice,      // remaining price
             long pBev, long pDish, // partial values for beverage and dish
             DigitMap digits,  // map of digit states
-            List<String> solutions,  // list of solutions
-            Map<Integer, Long> cache  // cache of digitState -> solution count at level 9
+            List<String> solutions  // list of solutions
     ) {
         // base case
         if (mult == 0) {
@@ -77,11 +75,6 @@ public class FreeDesserts {
 
         long solcnt = 0;
         int priced = (int) (pPrice / mult);
-        if (mult == 100_000_000 && solutions.size() >= 5000) {
-            Integer key = digits.digitState | (priced << 24);
-            Long cnt = cache.get(key);
-            if (cnt != null) return cnt;
-        }
         int minbevd = Math.max(0, priced - 10);
         int maxbevd = Math.min(9, priced);
         if (pDish == 0) maxbevd = Math.min(9, (priced - 1) / 2);
@@ -94,7 +87,7 @@ public class FreeDesserts {
             if (dishd >= 0 && dishd < 10
                     && digits.mapDigit(pDish, dishd, DigitMap.DISH)) {
                 solcnt += solve(mult / 10, pPrice % mult, pBev, pDish + mult
-                        * dishd, digits, solutions, cache);
+                        * dishd, digits, solutions);
                 digits.unmapDigit(pDish, dishd);
             }
 
@@ -102,16 +95,12 @@ public class FreeDesserts {
             if (dishd >= 0 && dishd < 10
                     && digits.mapDigit(pDish, dishd, DigitMap.DISH)) {
                 solcnt += solve(mult / 10, mult + pPrice % mult, pBev, pDish
-                        + mult * dishd, digits, solutions, cache);
+                        + mult * dishd, digits, solutions);
                 digits.unmapDigit(pDish, dishd);
             }
 
             pBev -= mult * bevd;
             digits.unmapDigit(pBev, bevd);
-        }
-        if (mult == 100_000_000 && solutions.size() >= 5000) {
-            Integer key = digits.digitState | (priced << 24);
-            cache.put(key, solcnt);
         }
         return solcnt;
     }
