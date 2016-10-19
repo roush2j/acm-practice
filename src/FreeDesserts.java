@@ -72,6 +72,26 @@ import java.util.*;
  * {@code B0, D0} that does not assume a carry then we have a complete legal
  * value for {@code B, D}.
  * 
+ * The last - and perhaps most important - part of a correct solution is dynamic
+ * programming. The problem only requires us to print the first 5000 valid
+ * solutions for {@code B, D}, but we must count <b>all</b> valid solutions.
+ * Since P can be up to 18 digits long and our search tree has an average
+ * branching factor of ~5, there may be trillions of leaves in a full search -
+ * far too many to visit within the prescribed time limits.
+ * 
+ * Once we stop printing solutions, however, there are at most about 500,000
+ * possible unique combinations of arguments to our search function (~4^9
+ * possible digit assignments x 2 possibilities for assumed carry). That means
+ * that for all digits after the ninth, the number of nodes at that depth in the
+ * search tree will greatly exceed the number of unique combinations of search
+ * arguments. Therefore that we will be <b>repeatedly calling the search
+ * function with the same arguments</b>. This is a textbook case for dynamic
+ * programming. We have an expensive sub-problem (the number of valid solutions
+ * from the 9th digit onward, given a digit map and a carry state) which is
+ * being solved repeatedly. We can <b>cache</b> the number of solutions the
+ * first time we calculate it for a particular combination of arguments. This
+ * cuts the runtime of the algorithm down by many orders of magnitude.
+ * 
  * https://open.kattis.com/contests/rt95cv/problems/freedesserts
  *
  * @author jroush
@@ -79,7 +99,7 @@ import java.util.*;
 public class FreeDesserts {
 
     public static void main(String[] args) {
-        
+
         // read in input - note that an 18 digit number *will* fit in a 
         // signed 64bit integer
         Scanner s = new Scanner(System.in);
@@ -92,15 +112,15 @@ public class FreeDesserts {
             int digit = (int) (x % 10);
             digits.mapDigit(x, digit, DigitMap.PRICE);
         }
-        
+
         // allocate solution list and cache
         List<String> solutions = new ArrayList<>(5000);
         Map<Integer, Long> cache = new HashMap<>();
-        
+
         // recursively search for solutions
         long cnt = solve(100_000_000_000_000_000L, P, 0, 0, digits, solutions,
                 cache);
-        
+
         // print solution count and first 5000 solutions
         System.out.println(cnt);
         for (String sol : solutions) {
@@ -125,9 +145,9 @@ public class FreeDesserts {
 
         /**
          * We keep track of how many times a digit has appeared in its assigned
-         * number. This gets incremented in {@code mapDigit()} and decremented in
-         * {@code unmapDigit()}. When it reaches zero, we know the digit is FREE
-         * again.
+         * number. This gets incremented in {@code mapDigit()} and decremented
+         * in {@code unmapDigit()}. When it reaches zero, we know the digit is
+         * FREE again.
          */
         private int[]           digitCount = new int[10];
 
@@ -171,7 +191,7 @@ public class FreeDesserts {
         if (mult == 0) {
             if (pPrice > 0) {
                 // solution invalid - we assumed a carry but have nothing to carry from
-                return 0; 
+                return 0;
             } else {
                 // valid solution
                 if (solutions.size() < 5000) {
@@ -196,7 +216,7 @@ public class FreeDesserts {
             Long cnt = cache.get(key);
             if (cnt != null) return cnt;
         }
-        
+
         // find the range of bev digits that could possibly add up to our price
         int minbevd = Math.max(0, priced - 10);
         int maxbevd = Math.min(9, priced);
@@ -205,7 +225,7 @@ public class FreeDesserts {
             // than the matching digit in pBev.
             maxbevd = Math.min(9, (priced - 1) / 2);
         }
-        
+
         // iterate through possible digits for beverage and dish
         long solcnt = 0;
         for (int bevd = minbevd; bevd <= maxbevd; bevd++) {
@@ -233,12 +253,12 @@ public class FreeDesserts {
                         + mult * dishd, digits, solutions, cache);
                 digits.unmapDigit(pDish, dishd); // unassign dishd-1 from DISH
             }
-            
+
             // unassign bevd from BEV
             pBev -= mult * bevd;
             digits.unmapDigit(pBev, bevd);
         }
-        
+
         if (mult == 100_000_000) {
             // store the number of solutions in the cache for future reference
             Integer key = digits.digitState | (priced << 24);
