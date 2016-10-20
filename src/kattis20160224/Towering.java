@@ -1,3 +1,4 @@
+package kattis20160224;
 import java.util.*;
 
 // Submissions to CMICH SP16 #2
