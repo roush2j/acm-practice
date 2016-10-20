@@ -1,3 +1,4 @@
+package kattispersonal;
 import java.util.Scanner;
 
 public class Xortris {

@@ -1,3 +1,4 @@
+package kattispersonal;
 import java.io.*;
 
 public class Deathstar {
