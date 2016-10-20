@@ -1,3 +1,4 @@
+package kattis2015;
 import java.math.BigInteger;
 import java.util.Scanner;
 
@@ -11,7 +12,7 @@ import java.util.Scanner;
  * 
  * @author jroush
  */
-public class Main {
+public class Bees {
 
     public static void main(String[] args) {
         Scanner s = new Scanner(System.in);
