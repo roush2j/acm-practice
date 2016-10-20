@@ -1,3 +1,4 @@
+package kattis20160228;
 import java.util.*;
 
 public class FoxNoise {

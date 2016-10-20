@@ -1,3 +1,4 @@
+package kattis20160228;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.regex.Pattern;
