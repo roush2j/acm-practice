@@ -1,3 +1,4 @@
+package kattis20160924;
 import java.io.IOException;
 
 /**
