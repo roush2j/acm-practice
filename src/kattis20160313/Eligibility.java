@@ -1,3 +1,4 @@
+package kattis20160313;
 import java.util.*;
 
 public class Eligibility {
