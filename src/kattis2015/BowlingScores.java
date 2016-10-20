@@ -1,6 +1,7 @@
+package kattis2015;
 import java.util.*;
 
-public class Main {
+public class BowlingScores {
 
     public static void main(String[] args) {
         Scanner s = new Scanner(System.in);
