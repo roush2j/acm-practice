@@ -1,70 +1,81 @@
 package kattispersonal;
-import java.io.*;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+
+/**
+ * https://open.kattis.com/problems/whowantstoliveforever
+ *
+ * @author jroush
+ */
 public class LiveForever {
-        
-    private static final byte[] kernel;
-    static {
-        kernel = new byte[1 << (Byte.SIZE + 2)];
-        for (int state = 0; state < kernel.length; state++) {
-            int next = 0, hstate = state >>> 2;
-            for (int i = 0, m = 1; i < Byte.SIZE; i++, m <<= 1) {
-                next |= (state ^ hstate) & m;
+
+    public static boolean readBit(int[] state, int i) {
+        return (state[i >>> 5] & (1 << (i & 0x1F))) != 0;
+    }
+
+    public static boolean dies(int[] state, int len) {
+        // for even lengths, only the all-zeros dead state DIES
+        if ((len & 0x1) == 0) {
+            for (int i = (len + Integer.SIZE - 1) / Integer.SIZE; i >= 0; i--) {
+                if (state[i] != 0) return false;
             }
-            kernel[state] = (byte) next;
+            return true; // all zeros
         }
-    }
-    
-    private static String lpad(int x, int len) {
-        StringBuilder sb = new StringBuilder();
-        String s = Integer.toBinaryString(x);
-        for (int i = s.length(); i < len; i++) {
-            sb.append(0);
+
+        // otherwise, we find a,m such that len = a * 2^m - 1
+        int a = len + 1, m = 0;
+        while ((a & 0x1) == 0) {
+            a >>= 1;
+            m++;
         }
-        sb.append(s);
-        return sb.toString();
-    }
-    
-    public static int sim(int state, int len) {
-        int next = 0;
-        next |= (kernel[(state << 1) & 0x3FF] & 0xFF);
-        next |= (kernel[(state >>> 7) & 0x3FF] & 0xFF) << 8;
-        next |= (kernel[(state >>> 15) & 0x3FF] & 0xFF) << 16;
-        next |= (kernel[(state >>> 23) & 0x3FF] & 0xFF) << 24;
-        return next & ((1 << len) - 1);
+
+        // dies iif state is `a` mirrored subgroups of `2^m-1` bits,
+        // separated by zeros
+        int g = (1 << m);
+        for (int i = 1; i < a; i++) {
+            if (readBit(state, g * i - 1)) return false;
+            for (int j = 0; j < g - 1; j++) {
+                if (readBit(state, g * i + j) != readBit(state, g * i - j - 2))
+                    return false;
+            }
+        }
+        return true;
     }
 
-    public static boolean fate(int state, int len, int[] cache) {
-        while (state != 0) {
-            int cidx = state >>> 5, cshift = state & 0x1F;
-            int cachebit = (cache[cidx] >>> cshift) & 0x1;
-            if (cachebit != 0) return true; // cycle detected
-            cache[cidx] |= (1 << cshift);
-            state = sim(state, len);
-        }
-        return false;
-    }
-    
-    public static int countFates(int len) {
-        boolean printDead = len < 4 || Integer.bitCount(len + 1) != 1;
-        int count = 0;
-        int[] cache = new int[1 << Math.max(0, len - 5)];
-        for (int state = (1 << len) - 1; state != 0; state--) {
-            Arrays.fill(cache, 0);
-            if (fate(state, len, cache)) count++;
-            else if (printDead) System.out.format("%2d   dead %32s\n", len, lpad(state, len));
-        }
-        if (printDead) System.out.format("%2d   dead %32s\n", len, lpad(0, len));
-        return count;
-    }
+    public static void main(String[] args) throws IOException {
+        InputStream in = System.in;
 
-    public static void main(String[] args) {
-        
-        for (int len = 1; len < 30; len++) {
-            int alive = countFates(len);
-            int dead = (1 << len) - alive;
-            System.out.format("%2d %8d %8d\n", len, dead, alive);
-        }        
+        // iterate once per test case
+        int testCnt = 0;
+        for (int c = in.read(); c >= '0'; c = in.read()) {
+            testCnt *= 10;
+            testCnt += c - '0';
+        }
+        int[] state = new int[128];
+        for (; testCnt > 0; testCnt--) {
+
+            // read input line, one bit per character
+            int idx = 0, bit = 1, val = 0;
+            for (int c = in.read(); c >= '0'; c = in.read()) {
+                if (c == '1') val |= bit;
+                bit <<= 1;
+                if (bit == 0) {
+                    state[idx] = val;
+                    if (++idx >= state.length)
+                        state = Arrays.copyOf(state, state.length * 2);
+                    bit = 1;
+                    val = 0;
+                }
+            }
+            state[idx] = val;
+            int len = idx * Integer.SIZE + Integer.numberOfTrailingZeros(bit);
+
+            // determine fate
+            if (dies(state, len)) System.out.println("DIES");
+            else System.out.println("LIVES");
+        }
     }
 
 }
