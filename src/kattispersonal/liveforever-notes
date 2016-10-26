@@ -1,0 +1,77 @@
+## Rule 90
+The system is a Cellular Autonoma known as "Rule 90".
+It's well-known enough to have it's own wikipedia page
+
+## Brute-force 
+Exhaustive Search through the state space of various lengths 
+shows that:
+    - the number of states which lead to death is always a power of 2
+    - a state of all zeros always dies (hence every length has at least 1 "DIES" state)
+    - only the state of all zeros dies for even lengths
+    - every state eventually dies for lengths which are 1 less than a power of 2
+    
+## Reverse search
+Since the number of "DIES" states is usually small compared to the total state
+space for a given length, we can speed up our search by starting at the all-zeros
+state and recursively enumerating all possible predecessor states.
+
+## Conjecture
+If we enumerate all of the "DIES" states for for "intermediate" lengths L (odd 
+but not `2^n-1`), we see every DIES state has a common pattern of zeros, 
+dividing it into `a` subsections of length `2^m-1`, where `a` is odd:
+
+ 5 sections of length 1:            v v v v
+   9   dead                        101010101
+   9   dead                        000000000
+   9   dead 2 total of 510
+   
+ 3 sections of length 3:            v   v
+  11   dead                      11101110111
+  11   dead                      11000110110
+  11   dead                      10101010101
+  11   dead                      10000010100
+  11   dead                      01101100011
+  11   dead                      01000100010
+  11   dead                      00101000001
+  11   dead                      00000000000
+  11   dead 8 total of 2040
+  
+ 3 sections of length 7:    v       v
+  23   dead          11111110111111101111111
+  23   dead          11111100011111101111110
+  23   dead          11111010101111101111101
+  23   dead          11111000001111101111100
+  23   dead          11110110110111101111011
+  23   dead          11110100010111101111010
+  23   dead          11110010100111101111001
+  23   dead          11110000000111101111000
+  23   dead          11101110111011101110111
+  23   dead          11101100011011101110110
+  23   dead          11101010101011101110101
+  23   dead          11101000001011101110100
+  23   dead          11100110110011101110011
+  23   dead          11100100010011101110010
+  23   dead          11100010100011101110001
+  23   dead          11100000000011101110000
+  23   dead          11011110111101101101111
+       ...
+  23   dead 128 total of 8388480
+
+Each of the `a` subsections precisely *mirrors* its neighbors such that they
+never produce a 1 in the gap between them.  Given one of the `2^(2^m-1)` substates
+in the first subsection, there is exactly 1 substate that can appear in each of 
+the following subsections that meets this property.  Therefore, the number of
+DIES states for intermediate length `L = `a * 2^m - 1` is exactly `2^(2^m-1)`.
+
+## Proposed solution
+We can solve the problem as follows:
+    1. read the input and find its length L
+    2. if L is even:
+        if the input is all zeros print DIES, otherwise print LIVES
+    3. L is odd, find `a` and `m` such that `L = a * 2^m - 1`
+    4. iterate through the input and print DIES if and only if:
+        a. every (2^m)th bit is zero
+        b. each run of `2m-1` bits between the zeros is an exact mirror of 
+           the previous run
+    5. otherwise print LIVES
+       
