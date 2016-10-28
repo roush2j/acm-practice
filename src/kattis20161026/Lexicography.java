@@ -1,42 +1,54 @@
 package kattis20161026;
 
-import java.util.Arrays;
-import java.util.Scanner;
+import java.util.*;
 
+/**
+ * https://open.kattis.com/contests/e3emoi/problems/lexicography
+ *
+ * @author jroush
+ */
 public class Lexicography {
-    
-    public static long permCount(char[] chars, int start, int len) {
-        Arrays.sort(chars, start, start + len);
+
+    /** Return an array of 26 counts, one for each latin character in the string */
+    public static int[] charCnt(String s) {
+        int[] cnt = new int[26];
+        for (int i = 0; i < s.length(); i++) {
+            char c = Character.toUpperCase(s.charAt(i));
+            if (c < 'A' || c > 'Z')
+                throw new RuntimeException("Invalid character " + c);
+            cnt[c - 'A']++;
+        }
+        return cnt;
+    }
+
+    /** Calculate the number of unique anagrams given an array of character counts */
+    public static long permCount(int[] charCnt) {
         long fact = 1, div = 1;
-        char prev = '\0';
-        for (int i = 0, run = 1; i < len; i++, run++) {
-            if (chars[i + start] != prev) run = 1;
-            prev = chars[i + start];
-            fact *= (i + 1);
-            div *= run;
+        for (int ic = 0, uc = 1; ic < charCnt.length; ic++) {
+            for (int l = 1; l <= charCnt[ic]; l++, uc++) {
+                fact *= uc; // compute the factorial of total number of characters
+                div *= l;  // compute the product of the factorials of each character count
+            }
         }
         return fact / div;
     }
-    
-    public static void solve(char[] chars, int start, int len, long rank) {
-        Arrays.sort(chars, start, start + len);
-        char prev = '\0';
-        for (int i = 0; i < len; i++) {
-            char c = chars[i + start];
-            if (c != prev) {
-                char[] tmp = Arrays.copyOfRange(chars, start, start + len);
-                tmp[i] = chars[start];
-                long cnt = permCount(tmp, 1, len - 1);
-                if (cnt < rank) rank -= cnt;
-                else {
-                    chars[start + i] = chars[start];
-                    chars[start] = c;
-                    solve(chars, start + 1, len - 1, rank);
-                    return;
-                }
+
+    /** Find the nth unique anagram in lexographic order, given an array of character counts */
+    public static String solve(int[] charCnt, long rank) {
+        for (int ic = 0; ic < charCnt.length; ic++) {
+            if (charCnt[ic] == 0) continue;
+            char c = (char) ('A' + ic);
+            charCnt[ic]--;
+            long cnt = permCount(charCnt);
+            if (cnt < rank) {
+                rank -= cnt;
+                charCnt[ic]++;
+            } else {
+                String s = solve(charCnt, rank);
+                return c + s;
             }
-            prev = chars[i + start];
         }
+        return "";
     }
 
     public static void main(String[] args) {
@@ -45,10 +57,9 @@ public class Lexicography {
             String word = s.next();
             long rank = s.nextLong();
             if (word.equals("#") && rank == 0) break; // '#' denotes end of file
-            
-            char[] chars = word.toCharArray();
-            solve(chars, 0, chars.length, rank);
-            System.out.println(new String(chars));
+
+            String ana = solve(charCnt(word), rank);
+            System.out.println(ana);
         }
         s.close();
     }
