@@ -1,3 +1,6 @@
 # compiled classfiles
 bin/
 *.class
+
+# test cases (should be added manually if necessary)
+problemspecs/
