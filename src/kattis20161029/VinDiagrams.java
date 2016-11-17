@@ -1,107 +1,150 @@
 package kattis20161029;
 
-import java.util.Scanner;
+import java.io.*;
+import java.util.*;
 
 public class VinDiagrams {
 
-    static final int UNK = 0, A = 1, B = 2, Edge = 4, Empty = 8;
+    static final int A = 1, B = 2, Edge = 4;
 
-    public static void trace(byte[] grid, int row, int col, int idx) {
-        int state = grid[idx];
-        int r = idx / col, c = idx % col, i = idx;
-        boolean dir = false;
-        while (true) {
-            int d = 0;
-            for (; d < 2; d++, dir = !dir) {
-                if (dir) {
-                    if (r > 0 && (grid[i - col] & state) == Edge) {
-                        r--;
-                        i -= col;
-                        break;
-                    } else if (r < row - 1 && (grid[i + col] & state) == Edge) {
-                        r++;
-                        i += col;
-                        break;
-                    }
-                } else {
-                    if (c > 0 && (grid[i - 1] & state) == Edge) {
-                        c--;
-                        i -= 1;
-                        break;
-                    } else if (c < col - 1 && (grid[i + 1] & state) == Edge) {
-                        c++;
-                        i += 1;
-                        break;
-                    }
-                }
+    public static void dumpGrid(int[][] grid) {
+        final int R = grid.length, C = grid[0].length;
+        for (int r = 0; r < R; r++) {
+            for (int c = 0; c < C; c++) {
+                System.out.print(Integer.toHexString(grid[r][c]));
             }
-            if (d == 2) return; // no edge neighbors found to trace
-            grid[i] |= state;
+            System.out.println();
         }
     }
 
-    public static void main(String[] args) {
-        Scanner s = new Scanner(System.in);
-        int row = s.nextInt(), col = s.nextInt();
+    public static void fillEdge(int[][] grid, int r0, int c0, int val) {
+        final int R = grid.length, C = grid[0].length;
+        int r = r0, c = c0;
+        int dr = 1, dc = 0;
+        do {
+            for (int dir = 0; dir < 4; dir++) {
+                int nr = r + dr, nc = c + dc;
+                if (dir != 2 && nr >= 0 && nr < R && nc >= 0 && nc < C
+                        && (grid[nr][nc] & Edge) != 0) {
+                    grid[r][c] |= val;
+                    r = nr;
+                    c = nc;
+                    break;
+                } else {
+                    int tmp = dc;
+                    dc = dr;
+                    dr = -tmp;
+                }
+            }
+        } while (r != r0 || c != c0);
+    }
+
+    public static void fillInterior(int[][] grid, int r, int c, int val) {
+        final int R = grid.length, C = grid[0].length;
+        if (r < 0 || r >= R || c < 0 || c >= C || (grid[r][c] & val) != 0)
+            return;
+        grid[r][c] |= val;
+        int dr = 1, dc = 0;
+        for (int dir = 0; dir < 4; dir++) {
+            fillInterior(grid, r + dr, c + dc, val);
+            int tmp = dc;
+            dc = dr;
+            dr = -tmp;
+        }
+    }
+
+    public static String solve(Scanner s) {
+        int R = s.nextInt(), C = s.nextInt();
         s.nextLine();
-        byte[] grid = new byte[row * col];
-        int astart = -1, bstart = -1;
-        for (int r = 0; r < row; r++) {
+
+        int[][] grid = new int[R][C];
+
+        int rA = -1, cA = -1, rB = -1, cB = -1;
+        for (int r = 0; r < R; r++) {
             String line = s.nextLine();
-            for (int c = 0; c < col; c++) {
+            for (int c = 0; c < C; c++) {
                 switch (line.charAt(c)) {
                 case 'X':
-                    grid[r * col + c] = Edge;
+                    grid[r][c] = Edge;
                     break;
                 case 'A':
-                    grid[r * col + c] = A | Edge;
-                    astart = r * col + c;
+                    grid[r][c] = A | Edge;
+                    rA = r;
+                    cA = c;
                     break;
                 case 'B':
-                    grid[r * col + c] = B | Edge;
-                    bstart = r * col + c;
+                    grid[r][c] = B | Edge;
+                    rB = r;
+                    cB = c;
                     break;
                 default:
-                    grid[r * col + c] = UNK;
+                }
+            }
+        }
+
+        fillEdge(grid, rA, cA, A);
+        fillEdge(grid, rB, cB, B);
+
+        A: for (int r = 0; r < R; r++) {
+            for (int c = 0; c < C; c++) {
+                if ((grid[r][c] & A) != 0) {
+                    fillInterior(grid, r + 1, c + 1, A);
+                    break A;
+                }
+            }
+        }
+        B: for (int r = 0; r < R; r++) {
+            for (int c = 0; c < C; c++) {
+                if ((grid[r][c] & B) != 0) {
+                    fillInterior(grid, r + 1, c + 1, B);
+                    break B;
+                }
+            }
+        }
+
+        int acnt = 0, bcnt = 0, icnt = 0;
+        for (int r = 0; r < R; r++) {
+            for (int c = 0; c < C; c++) {
+                switch (grid[r][c]) {
+                case A:
+                    acnt++;
+                    break;
+                case B:
+                    bcnt++;
+                    break;
+                case A | B:
+                    icnt++;
                     break;
                 }
             }
         }
-        s.close();
+        return String.format("%d %d %d", acnt, bcnt, icnt);
+    }
 
-        trace(grid, row, col, astart);
-        trace(grid, row, col, bstart);
-
-        int acnt = 0, bcnt = 0, abcnt = 0;
-        for (int r = 0; r < row; r++) {
-            for (int c = 0; c < col; c++) {
-                if ((grid[r * col + c] & Edge) > 0) {
-                    continue;
-                } 
-                int up = 0, dn = 0, lf = 0, rt = 0;
-                for (int rr = r - 1; rr >= 0; rr--) {
-                    up ^= grid[rr * col + c];
-                }
-                for (int rr = r + 1; rr < row; rr++) {
-                    dn ^= grid[rr * col + c];
-                }
-                for (int cc = c - 1; cc >= 0; cc--) {
-                    lf ^= grid[r * col + cc];
-                }
-                for (int cc = c + 1; cc < col; cc++) {
-                    rt ^= grid[r * col + cc];
-                }
-                int edges = up & dn & lf & rt & (A | B);
-                if (edges == A) {
-                    acnt++;
-                } else if (edges == B) {
-                    bcnt++;
-                } else if (edges == (A | B)) {
-                    abcnt++;
-                }
+    public static void bulkTest(String secretTestPath)
+            throws FileNotFoundException {
+        for (int i = 3; i <= 13; i++) {
+            File fin = new File(String.format("%s/%03d.in", secretTestPath, i));
+            Scanner s = new Scanner(fin);
+            String sol = solve(s);
+            s.close();
+            File fans = new File(
+                    String.format("%s/%03d.ans", secretTestPath, i));
+            s = new Scanner(fans);
+            String ans = s.nextLine().trim();
+            if (sol.equals(ans)) {
+                System.out.format("PASSED test case %d: %s\n", i, sol);
+            } else {
+                System.out.format("FAILED test case %d: %s != %s\n", i, sol,
+                        ans);
             }
+            s.close();
         }
-        
-        System.out.println(acnt + " " + bcnt + " " + abcnt);
+    }
+
+    public static void main(String[] args) throws FileNotFoundException {
+        Scanner s = new Scanner(System.in);
+        System.out.println(solve(s));
+        s.close();
     }
 }
