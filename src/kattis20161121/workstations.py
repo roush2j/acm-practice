@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# https://open.kattis.com/problems/workstations
+# https://open.kattis.com/contests/n2kwag/problems/workstations
 
 # Credit for this algorithm goes to Joe Byrd and Richard Sivak
 
